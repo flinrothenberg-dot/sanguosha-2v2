@@ -1,0 +1,6 @@
+node_modules/
+dist/
+dileizhan/
+*.zip
+.edgeone/
+*.tsbuildinfo
