@@ -386,9 +386,9 @@ const CardIllustration: React.FC<{ card: Card }> = ({ card }) => {
 };
 
 const svgArtStyle: React.CSSProperties = {
-  width: '86%',
-  height: '86%',
-  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.22))',
+  width: '92%',
+  height: '92%',
+  filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.28))',
 };
 
 /**
@@ -548,14 +548,14 @@ export const PlayingCard: React.FC<PlayingCardProps> = ({
             bottom: 4,
             left: '50%',
             transform: 'translateX(-50%)',
-            maxWidth: '94%',
+            maxWidth: '96%',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             background: 'rgba(15, 23, 42, 0.92)',
             color: '#fde68a',
-            fontSize: 9,
+            fontSize: 8,
             fontWeight: 700,
-            padding: '1px 6px',
+            padding: '1px 4px',
             borderRadius: 99,
             whiteSpace: 'nowrap',
             border: '1px solid rgba(253, 230, 138, 0.45)',

@@ -1130,7 +1130,13 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
                 <PlayingCard
                   card={tc.card}
                   compact
-                  badge={tc.label ? `${tc.fromName}·${tc.label}` : tc.toName ? `${tc.fromName}→${tc.toName}` : tc.fromName}
+                  badge={
+                    tc.label
+                      ? `${tc.fromName}·${tc.label}`
+                      : tc.toName && tc.toName !== tc.fromName
+                        ? `${tc.fromName}→${tc.toName}`
+                        : tc.fromName
+                  }
                 />
               </div>
             ))}
@@ -1336,10 +1342,10 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
           }}
         >
           {/* Prompt text & phase badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: '96%' }}>
             <span
               style={{
-                padding: '2px 10px',
+                padding: '2px 9px',
                 borderRadius: 4,
                 background: inlinePrompt
                   ? 'linear-gradient(90deg, #b45309, #d97706)'
@@ -1349,6 +1355,8 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
                 color: '#fffbeb',
                 fontSize: 11,
                 fontWeight: 800,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 boxShadow: '0 2px 6px rgba(0,0,0,0.45)',
               }}
             >
@@ -1600,9 +1608,10 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
               display: 'flex',
               alignItems: 'flex-end',
               justifyContent: 'flex-start',
+              gap: displayedHand.length > 3 ? 0 : 6,
               overflowX: 'auto',
               overflowY: 'visible',
-              padding: '16px 4px 2px 24px',
+              padding: '16px 4px 2px 6px',
             }}
           >
             {displayedHand.length === 0 ? (
@@ -1618,7 +1627,7 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
                     compact
                     selected={selected}
                     disabled={!selectable}
-                    overlap={displayedHand.length > 4 && idx > 0}
+                    overlap={displayedHand.length > 3 && idx > 0}
                     onClick={() => handleCardClick(card)}
                   />
                 );
