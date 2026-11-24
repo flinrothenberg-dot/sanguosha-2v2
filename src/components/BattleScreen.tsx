@@ -564,11 +564,15 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
 
   const activeSkillHint = activeSkillButtons.find((b) => b.id === activeSkillMode)?.hint;
 
-  // Dynamic official prompt text right above 确定 / 回合结束
+  // Dynamic official prompt text right above 确定 / 结束出牌
   const promptBannerText = useMemo(() => {
     if (inlinePrompt) return `${inlinePrompt.title}：${inlinePrompt.subtitle}`;
     if (!isHumanPlayTurn) {
-      return state.autoPlay ? '托管模式运行中，自动出牌中...' : `等待 ${currentPlayer?.hero.name}（${PHASE_LABEL[state.phase]}）...`;
+      if (state.autoPlay) return '托管模式运行中，自动出牌中...';
+      if (state.phase === 'play' && currentPlayer && !currentPlayer.isHuman) {
+        return `${currentPlayer.name}（${currentPlayer.hero.name}）正在思考出牌...`;
+      }
+      return `${currentPlayer?.hero.name} · ${PHASE_LABEL[state.phase]}...`;
     }
     if (activeSkillHint) return `发动技能：${activeSkillHint}`;
     if (selectedSingleCard) {
@@ -581,7 +585,7 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
       }
       return `已选择【${selectedSingleCard.name}】，点击【确定】立即使用`;
     }
-    return '出牌阶段，请选择一张手牌或点击右下角武将技能';
+    return '出牌阶段，请选择手牌或点击手牌上方技能';
   }, [inlinePrompt, isHumanPlayTurn, state.autoPlay, currentPlayer, state.phase, activeSkillHint, selectedSingleCard, convertSkillId, selectedTargetIds, state.players]);
 
   const handLimit = getHandLimit(human);

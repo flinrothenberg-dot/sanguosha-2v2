@@ -44,7 +44,7 @@ export interface MatchConfig {
   humanName?: string;
 }
 
-const AI_NAMES = ['神机军师', '虎威将军', '江东才俊', '常胜先锋', '乱世谋士', '铁血都督'];
+const AI_NAMES = ['夜雨听风', '青梅煮酒', '长安陌客', '南山小酌', '江东少主', '半盏清茶', '月落乌啼', '风起洛阳'];
 
 export class GameController {
   private state: GameState;
@@ -126,8 +126,14 @@ export class GameController {
   }
 
   private sleep(ms: number): Promise<void> {
-    // Comfortable 1x pacing (~2x slower than rapid prototype) so players clearly see every card, VFX, and skill
-    const actual = Math.max(160, Math.round((ms * 1.95) / this.state.speedMultiplier));
+    // Relaxed 1x pacing so every card play, VFX, and skill reads naturally without rushing
+    const actual = Math.max(220, Math.round((ms * 2.55) / this.state.speedMultiplier));
+    return new Promise((resolve) => setTimeout(resolve, actual));
+  }
+
+  private async humanPause(minMs: number, maxMs: number): Promise<void> {
+    const raw = minMs + Math.random() * Math.max(0, maxMs - minMs);
+    const actual = Math.max(250, Math.round(raw / this.state.speedMultiplier));
     return new Promise((resolve) => setTimeout(resolve, actual));
   }
 
@@ -511,6 +517,8 @@ export class GameController {
       player.lastPlayedRed = undefined;
       player.cardsPlayedThisTurn = 0;
 
+      // Clear previous turn's table cards cleanly when a new player starts their turn
+      this.state.tableCards = [];
       this.addLog(`─── 第 ${this.state.turnNumber} 回合：${player.hero.name}（${player.seatIndex + 1}号位）───`, 'phase');
 
       // 1. Prepare Phase
@@ -597,10 +605,11 @@ export class GameController {
       }
       const p = this.state.players.find((pl) => pl.id === prompt.playerId);
       if (!p || !p.isHuman || this.state.autoPlay) {
-        // AI auto-resolves prompt
+        // Natural human-like reaction delay (thinking whether to dodge / rescue / counter)
+        const reactMs = Math.round((850 + Math.random() * 650) / this.state.speedMultiplier);
         setTimeout(() => {
           resolve(this.resolvePromptByAI(prompt));
-        }, Math.max(150, Math.round(350 / this.state.speedMultiplier)));
+        }, Math.max(220, reactMs));
         return;
       }
 
@@ -2643,12 +2652,13 @@ export class GameController {
           }
         }
       } else {
-        // AI logic: use Wuxie if harmful to ally or 无中生有 for enemy
+        // Human-like consideration before countering with 无懈可击
         const allyTarget = isAlly(p, target, this.state.mode);
         const shouldNegate =
-          (isHarmful && allyTarget && (trickCard.name === '乐不思蜀' || trickCard.name === '决斗' || target.hp <= 2)) ||
-          (trickCard.name === '无中生有' && !allyTarget);
+          (isHarmful && allyTarget && (trickCard.name === '乐不思蜀' || trickCard.name === '决斗' || target.hp <= 2 || Math.random() < 0.65)) ||
+          (trickCard.name === '无中生有' && !allyTarget && Math.random() < 0.85);
         if (shouldNegate) {
+          await this.humanPause(950, 1550);
           this.removeHandCard(p, wuxieCard.id);
           this.pushTableCard(wuxieCard, p, target, '无懈可击');
           this.discardCards([wuxieCard]);
@@ -3145,10 +3155,23 @@ export class GameController {
   }
 
   private async runAIPlayPhase(player: Player) {
+    // Natural pause at start of play phase (looking over newly drawn hand)
+    await this.humanPause(1200, 1950);
+
     let safety = 0;
     while (!this.aborted && !this.state.winner && player.alive && safety < 24) {
       safety++;
-      await this.sleep(420);
+      if (safety > 1) {
+        // Variable human thinking pause between actions
+        await this.humanPause(1300, 2250);
+      }
+      if (this.aborted || this.state.winner || !player.alive) break;
+
+      const pickSpareCard = (excludeNames: CardName[] = ['桃', '无懈可击', '无中生有']): Card | undefined => {
+        const spares = player.hand.filter((c) => !excludeNames.includes(c.name));
+        const pool = spares.length > 0 ? spares : player.hand;
+        return pool[Math.floor(Math.random() * pool.length)];
+      };
 
       // 1. Hero active skills (classic + 谋 + 极 + 神)
       if (hasSkill(player, 'shenfen') && player.wrathMarks >= 4 && (player.skillsUsedThisTurn['shenfen'] ?? 0) < 1) {
@@ -3156,7 +3179,8 @@ export class GameController {
         continue;
       }
       if (hasSkill(player, 'kurou') && player.hp >= 2 && player.hand.length >= 1 && (player.skillsUsedThisTurn['kurou'] ?? 0) < 1) {
-        await this.executeActiveSkill(player, 'kurou', [player.hand[0].id], []);
+        const c = pickSpareCard(['桃', '酒']) ?? player.hand[0];
+        await this.executeActiveSkill(player, 'kurou', [c.id], []);
         continue;
       }
       if (hasSkill(player, 'zhiheng') && player.hand.length >= 2 && (player.skillsUsedThisTurn['zhiheng'] ?? 0) < 1) {
@@ -3171,7 +3195,8 @@ export class GameController {
           (p) => p.alive && isAlly(player, p, this.state.mode) && p.hp < p.maxHp
         );
         if (hurtAlly) {
-          await this.executeActiveSkill(player, 'qingnang', [player.hand[0].id], [hurtAlly.id]);
+          const c = pickSpareCard() ?? player.hand[0];
+          await this.executeActiveSkill(player, 'qingnang', [c.id], [hurtAlly.id]);
           continue;
         }
       }
@@ -3185,7 +3210,8 @@ export class GameController {
       if (hasSkill(player, 'fanjian') && player.hand.length >= 2 && (player.skillsUsedThisTurn['fanjian'] ?? 0) < 1) {
         const enemy = this.pickBestEnemy(player, this.state.players.filter((p) => p.alive && p.id !== player.id));
         if (enemy) {
-          await this.executeActiveSkill(player, 'fanjian', [player.hand[0].id], [enemy.id]);
+          const c = pickSpareCard() ?? player.hand[0];
+          await this.executeActiveSkill(player, 'fanjian', [c.id], [enemy.id]);
           continue;
         }
       }
@@ -3208,13 +3234,14 @@ export class GameController {
       if ((hasSkill(player, 'lianhuan_mou') || hasSkill(player, 'xieji_mou') || hasSkill(player, 'fenwei_mou')) && player.hand.length >= 1) {
         const sid = hasSkill(player, 'lianhuan_mou') ? 'lianhuan_mou' : hasSkill(player, 'xieji_mou') ? 'xieji_mou' : 'fenwei_mou';
         if ((player.skillsUsedThisTurn[sid] ?? 0) < 1) {
-          await this.executeActiveSkill(player, sid, [player.hand[0].id], []);
+          const c = pickSpareCard() ?? player.hand[0];
+          await this.executeActiveSkill(player, sid, [c.id], []);
           continue;
         }
       }
       if ((hasSkill(player, 'huoji_mou') || hasSkill(player, 'ronghuo_mou') || hasSkill(player, 'qianxun_mou'))) {
         const sid = hasSkill(player, 'huoji_mou') ? 'huoji_mou' : hasSkill(player, 'ronghuo_mou') ? 'ronghuo_mou' : 'qianxun_mou';
-        const red = player.hand.find((c) => isRedSuit(c.suit));
+        const red = player.hand.find((c) => isRedSuit(c.suit) && c.name !== '桃');
         const enemy = this.pickBestEnemy(player, this.state.players.filter((p) => p.alive && p.id !== player.id));
         if (red && enemy && (player.skillsUsedThisTurn[sid] ?? 0) < 1) {
           await this.executeActiveSkill(player, sid, [red.id], [enemy.id]);
@@ -3233,21 +3260,24 @@ export class GameController {
         const sid = hasSkill(player, 'shensu_mou') ? 'shensu_mou' : hasSkill(player, 'qingzheng_mou') ? 'qingzheng_mou' : 'kuangfu_mou';
         const enemy = this.pickBestEnemy(player, this.state.players.filter((p) => p.alive && p.id !== player.id));
         if (enemy && (player.skillsUsedThisTurn[sid] ?? 0) < 1) {
-          await this.executeActiveSkill(player, sid, [player.hand[0].id], [enemy.id]);
+          const c = pickSpareCard() ?? player.hand[0];
+          await this.executeActiveSkill(player, sid, [c.id], [enemy.id]);
           continue;
         }
       }
       if (hasSkill(player, 'xuanhuo_mou') && player.hand.length >= 2 && (player.skillsUsedThisTurn['xuanhuo_mou'] ?? 0) < 1) {
         const ally = this.state.players.find((p) => p.alive && p.id !== player.id && isAlly(player, p, this.state.mode));
         if (ally) {
-          await this.executeActiveSkill(player, 'xuanhuo_mou', [player.hand[0].id], [ally.id]);
+          const c = pickSpareCard() ?? player.hand[0];
+          await this.executeActiveSkill(player, 'xuanhuo_mou', [c.id], [ally.id]);
           continue;
         }
       }
 
-      // 2. Playable cards
+      // 2. Playable cards — shuffle scan order slightly so AI behaves naturally like a human player
       let acted = false;
-      for (const card of [...player.hand]) {
+      const handScan = Math.random() < 0.45 ? shuffle(player.hand) : [...player.hand];
+      for (const card of handScan) {
         if (!player.alive || this.state.winner) break;
 
         // Peach if hurt
@@ -3256,7 +3286,7 @@ export class GameController {
           acted = true;
           break;
         }
-        // Equip immediately if slot empty or better weapon
+        // Equip if slot empty or better weapon
         if (['weapon', 'armor', 'horse_plus', 'horse_minus'].includes(card.type)) {
           const shouldEquip =
             (card.type === 'weapon' && (!player.equip.weapon || (card.range ?? 1) > (player.equip.weapon.range ?? 1))) ||
@@ -3327,13 +3357,15 @@ export class GameController {
             const target = this.pickBestEnemy(player, valid);
             if (target) {
               const asSkill =
-                !isSlashCard(card) && player.hero.id === 'jie_guanyu'
+                !isSlashCard(card) && hasSkill(player, 'wusheng')
                   ? 'wusheng'
-                  : !isSlashCard(card) && player.hero.id === 'jie_zhaoyun'
+                  : !isSlashCard(card) && hasSkill(player, 'longdan')
                     ? 'longdan_sha'
-                    : !isSlashCard(card) && player.hero.id === 'shen_zhaoyun'
+                    : !isSlashCard(card) && hasSkill(player, 'longhun')
                       ? 'longhun_sha'
-                      : undefined;
+                      : !isSlashCard(card) && hasSkill(player, 'shoudi_ji')
+                        ? 'shoudi_ji'
+                        : undefined;
               await this.executePlayCard(player, card, target, asSkill);
               acted = true;
               break;
@@ -3342,7 +3374,11 @@ export class GameController {
         }
       }
 
-      if (!acted) break;
+      if (!acted) {
+        // Brief natural hesitation before passing turn
+        await this.humanPause(850, 1400);
+        break;
+      }
     }
   }
 }

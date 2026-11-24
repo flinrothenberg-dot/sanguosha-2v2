@@ -89,13 +89,31 @@ export const HeroArt: React.FC<HeroArtProps> = ({
         </div>
       )}
 
-      {/* Inner Gold Frame */}
+      {/* Inner Gilt Double Frame + Corner Filigree */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          border: '1.5px solid rgba(229, 185, 99, 0.55)',
-          boxShadow: 'inset 0 0 16px rgba(0, 0, 0, 0.5)',
+          border: isSpecial ? '1.5px solid rgba(253, 224, 71, 0.72)' : '1.5px solid rgba(229, 185, 99, 0.58)',
+          boxShadow: 'inset 0 0 22px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 245, 210, 0.25)',
+          pointerEvents: 'none',
+          zIndex: 2,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 3,
+          border: '1px solid rgba(253, 230, 138, 0.22)',
+          pointerEvents: 'none',
+          zIndex: 2,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, transparent 25%, transparent 68%, rgba(6,8,12,0.55) 100%)',
           pointerEvents: 'none',
           zIndex: 2,
         }}

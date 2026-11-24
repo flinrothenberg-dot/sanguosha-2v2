@@ -29,27 +29,50 @@ export const PromptModal: React.FC<PromptModalProps> = ({ state, prompt, onSubmi
             {/* Hand */}
             {target.hand.length > 0 && (
               <div>
-                <div style={zoneLabelStyle}>手牌区（{target.hand.length} 张）</div>
+                <div style={zoneLabelStyle}>手牌区（暗置 {target.hand.length} 张 · 点击任意牌背抽取）</div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {target.hand.map((_, idx) => (
                     <button
                       key={idx}
                       type="button"
                       onClick={() => onSubmit({ confirmed: true, selectedZone: 'hand' })}
+                      title="暗置手牌（不可见牌面）"
                       style={{
-                        width: 68,
-                        height: 94,
+                        position: 'relative',
+                        width: 66,
+                        height: 92,
                         borderRadius: 8,
-                        border: '1.5px solid #e5b963',
-                        background: 'linear-gradient(155deg, #451a03, #1c1917)',
-                        color: '#fde68a',
-                        fontWeight: 900,
-                        fontSize: 20,
+                        border: '1.5px solid #d4a76a',
+                        background:
+                          'radial-gradient(circle at 50% 42%, #7f1d1d 0%, #450a0a 62%, #1c0808 100%)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.6), inset 0 0 0 3px rgba(229,185,99,0.22)',
                         cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
                       }}
                     >
-                      杀
+                      <svg viewBox="0 0 66 92" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.45 }}>
+                        <rect x="6" y="6" width="54" height="80" rx="5" fill="none" stroke="#fde68a" strokeWidth="1" strokeDasharray="3 2" />
+                        <circle cx="33" cy="46" r="18" fill="none" stroke="#fde68a" strokeWidth="1.2" />
+                        <circle cx="33" cy="46" r="11" fill="none" stroke="#f59e0b" strokeWidth="0.9" />
+                      </svg>
+                      <span
+                        className="font-serif-cn"
+                        style={{
+                          position: 'relative',
+                          fontSize: 13,
+                          fontWeight: 900,
+                          color: '#fde68a',
+                          letterSpacing: 1,
+                          writingMode: 'vertical-rl',
+                          textOrientation: 'upright',
+                          textShadow: '0 2px 6px #000',
+                        }}
+                      >
+                        三国杀
+                      </span>
                     </button>
                   ))}
                 </div>
