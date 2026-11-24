@@ -8,7 +8,7 @@ interface PlayingCardProps {
   disabled?: boolean;
   compact?: boolean;
   badge?: string;
-  overlap?: boolean;
+  overlap?: boolean | number;
   onClick?: () => void;
 }
 
@@ -408,6 +408,8 @@ export const PlayingCard: React.FC<PlayingCardProps> = ({
   const w = compact ? 76 : 90;
   const h = compact ? 108 : 128;
 
+  const overlapMargin = typeof overlap === 'number' ? -Math.abs(overlap) : overlap ? -22 : 0;
+
   return (
     <button
       type="button"
@@ -418,7 +420,7 @@ export const PlayingCard: React.FC<PlayingCardProps> = ({
         width: w,
         height: h,
         flexShrink: 0,
-        marginLeft: overlap ? -22 : 0,
+        marginLeft: overlapMargin,
         borderRadius: 8,
         padding: 0,
         border: selected ? '2.5px solid #38bdf8' : '1.5px solid #a88754',

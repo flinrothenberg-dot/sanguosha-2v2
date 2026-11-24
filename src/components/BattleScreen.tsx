@@ -1600,40 +1600,54 @@ export const BattleScreen: React.FC<BattleScreenProps> = ({
         </div>
 
         {/* Main Bottom Row: [Overlapping Hand Cards] + [104px Neon-Green Vertical Player Hero Card] */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 104px', gap: 8, alignItems: 'end', height: 138 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 104px', gap: 8, alignItems: 'end', height: 138 }}>
           {/* Hand Cards Row */}
-          <div
-            style={{
-              height: '100%',
-              display: 'flex',
-              alignItems: 'flex-end',
-              justifyContent: 'flex-start',
-              gap: displayedHand.length > 3 ? 0 : 6,
-              overflowX: 'auto',
-              overflowY: 'visible',
-              padding: '16px 4px 2px 6px',
-            }}
-          >
-            {displayedHand.length === 0 ? (
-              <div style={{ margin: 'auto', color: '#8c7a64', fontSize: 12 }}>当前无手牌</div>
-            ) : (
-              displayedHand.map((card, idx) => {
-                const selectable = isCardSelectable(card);
-                const selected = selectedCardIds.includes(card.id);
-                return (
-                  <PlayingCard
-                    key={card.id}
-                    card={card}
-                    compact
-                    selected={selected}
-                    disabled={!selectable}
-                    overlap={displayedHand.length > 3 && idx > 0}
-                    onClick={() => handleCardClick(card)}
-                  />
-                );
-              })
-            )}
-          </div>
+          {(() => {
+            const overlapPx =
+              displayedHand.length <= 3
+                ? 0
+                : displayedHand.length === 4
+                  ? 18
+                  : displayedHand.length === 5
+                    ? 32
+                    : 38;
+            return (
+              <div
+                style={{
+                  minWidth: 0,
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'flex-start',
+                  gap: displayedHand.length > 3 ? 0 : 4,
+                  overflowX: displayedHand.length > 5 ? 'auto' : 'visible',
+                  overflowY: 'visible',
+                  padding: '16px 4px 2px 4px',
+                }}
+              >
+                {displayedHand.length === 0 ? (
+                  <div style={{ margin: 'auto', color: '#8c7a64', fontSize: 12 }}>当前无手牌</div>
+                ) : (
+                  displayedHand.map((card, idx) => {
+                    const selectable = isCardSelectable(card);
+                    const selected = selectedCardIds.includes(card.id);
+                    return (
+                      <PlayingCard
+                        key={card.id}
+                        card={card}
+                        compact
+                        selected={selected}
+                        disabled={!selectable}
+                        overlap={overlapPx > 0 && idx > 0 ? overlapPx : false}
+                        onClick={() => handleCardClick(card)}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            );
+          })()}
 
           {/* Right: 104x136 Player Hero Card */}
           <div style={{ position: 'relative', width: 104, height: 136 }}>
